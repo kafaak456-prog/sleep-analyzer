@@ -525,13 +525,14 @@ document.querySelectorAll('.toggle-group').forEach(group => {
   group.addEventListener('click', e => {
     const btn = e.target.closest('.toggle-btn');
     if (!btn) return;
-    const multi = group.id === 'priorities';
+    const multi = group.id === 'priorities' || group.id === 'classDays';
     if (multi) {
+      const maxSel = group.id === 'priorities' ? 2 : Infinity;
       const sel = group.querySelectorAll('.selected');
       if (btn.classList.contains('selected')) {
         btn.classList.remove('selected');
       } else {
-        if (sel.length < 2) btn.classList.add('selected');
+        if (sel.length < maxSel) btn.classList.add('selected');
       }
     } else {
       group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
