@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sleep Schedule Analyzer for Students</title>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --card: #1a1a2e;
+      --card2: #16213e;
+      --accent: #7c3aed;
+      --accent2: #a855f7;
+      --teal: #06b6d4;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #2d2d4e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header {
+      width: 100%;
+      padding: 20px 24px;
+      background: var(--card2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header .logo { font-size: 1.8rem; }
+    header h1 { font-size: 1.3rem; font-weight: 700; }
+    header span { color: var(--muted); font-size: 0.85rem; }
+
+    .container { width: 100%; max-width: 780px; padding: 32px 16px 60px; }
+
+    /* Steps */
+    .steps { display: flex; gap: 8px; margin-bottom: 32px; flex-wrap: wrap; }
+    .step-dot {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--card);
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700; color: var(--muted);
+      transition: all .3s;
+    }
+    .step-dot.active { border-color: var(--accent); color: var(--accent); }
+    .step-dot.done { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .step-line { flex: 1; height: 2px; background: var(--border); align-self: center; min-width: 12px; }
+    .step-line.done { background: var(--accent); }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .card h2 { font-size: 1.2rem; margin-bottom: 6px; }
+    .card p.sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 22px; line-height: 1.5; }
+
+    /* Form elements */
+    label { display: block; font-size: 0.88rem; color: var(--muted); margin-bottom: 6px; margin-top: 16px; }
+    label:first-of-type { margin-top: 0; }
+    input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+    .range-labels { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+    .range-val { font-size: 1.1rem; font-weight: 700; color: var(--accent2); text-align: center; margin-top: 4px; }
+
+    select, input[type=time], input[type=number] {
+      width: 100%;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border .2s;
+    }
+    select:focus, input:focus { border-color: var(--accent); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media(max-width: 500px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* Toggles */
+    .toggle-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+    .toggle-btn {
+      padding: 8px 16px; border-radius: 99px;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--muted);
+      cursor: pointer; font-size: 0.85rem; transition: all .2s;
+    }
+    .toggle-btn.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* Buttons */
+    .btn {
+      padding: 12px 28px; border-radius: 12px; border: none;
+      font-size: 1rem; font-weight: 600; cursor: pointer; transition: all .2s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent2); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-row { display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end; }
+
+    /* Schedule block */
+    .schedule-block {
+      margin-top: 8px;
+      background: var(--card2);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .schedule-block input[type=time] { width: auto; }
+    .remove-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 1.2rem; padding: 4px 8px; }
+    .add-btn {
+      margin-top: 10px; background: none; border: 1px dashed var(--border);
+      color: var(--muted); border-radius: 10px; padding: 8px 14px;
+      cursor: pointer; width: 100%; transition: all .2s; font-size: 0.9rem;
+    }
+    .add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Hidden / visible */
+    .hidden { display: none !important; }
+
+    /* ====== RESULTS ====== */
+    #results { display: none; }
+    .result-hero {
+      background: linear-gradient(135deg, var(--accent) 0%, #1d4ed8 100%);
+      border-radius: 16px; padding: 28px; margin-bottom: 20px;
+      text-align: center;
+    }
+    .result-hero h2 { font-size: 1.6rem; margin-bottom: 8px; }
+    .result-hero .big { font-size: 2.8rem; font-weight: 800; letter-spacing: -1px; }
+    .result-hero small { color: rgba(255,255,255,.75); font-size: 0.9rem; }
+
+    .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .metric-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px;
+      text-align: center;
+    }
+    .metric-card .icon { font-size: 1.6rem; margin-bottom: 6px; }
+    .metric-card .val { font-size: 1.5rem; font-weight: 700; }
+    .metric-card .label { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+    .metric-card.green .val { color: var(--green); }
+    .metric-card.yellow .val { color: var(--yellow); }
+    .metric-card.red .val { color: var(--red); }
+    .metric-card.teal .val { color: var(--teal); }
+
+    /* Timeline */
+    .timeline-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+    .timeline-wrap h3 { margin-bottom: 16px; font-size: 1rem; }
+    .timeline { position: relative; height: 60px; border-radius: 10px; overflow: hidden; background: var(--card2); }
+    .tl-segment {
+      position: absolute; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 600; overflow: hidden;
+      transition: all .3s;
+    }
+    .tl-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.72rem; color: var(--muted); }
+    .tl-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+    .tl-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--muted); }
+    .tl-legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+    /* Recommendations */
+    .rec-list { list-style: none; padding: 0; }
+    .rec-list li {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+      font-size: 0.92rem; line-height: 1.5;
+    }
+    .rec-list li:last-child { border-bottom: none; }
+    .rec-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+
+    /* Score ring */
+    .score-ring { position: relative; width: 90px; height: 90px; margin: 0 auto 10px; }
+    .score-ring svg { transform: rotate(-90deg); }
+    .score-ring .score-num {
+      position: absolute; inset: 0; display: flex;
+      align-items: center; justify-content: center;
+      font-size: 1.4rem; font-weight: 800;
+    }
+
+    /* Alert */
+    .alert {
+      border-radius: 10px; padding: 12px 16px;
+      font-size: 0.88rem; margin-bottom: 14px;
+      display: flex; gap: 10px; align-items: flex-start; line-height: 1.5;
+    }
+    .alert-warn { background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3); color: #fde68a; }
+    .alert-ok  { background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.3); color: #6ee7b7; }
+    .alert-bad { background: rgba(239,68,68,.12);  border: 1px solid rgba(239,68,68,.3);  color: #fca5a5; }
+
+    /* Cycle table */
+    .cycle-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .cycle-table th { text-align: left; color: var(--muted); font-weight: 600; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    .cycle-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .cycle-table tr:last-child td { border-bottom: none; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; }
+    .badge-green { background: rgba(16,185,129,.2); color: var(--green); }
+    .badge-yellow { background: rgba(245,158,11,.2); color: var(--yellow); }
+    .badge-red { background: rgba(239,68,68,.2); color: var(--red); }
+
+    .restart-btn { display: block; margin: 32px auto 0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🌙</div>
+  <div>
+    <h1>Sleep Schedule Analyzer</h1>
+    <span>Optimized for Engineers, CS & Busy Students</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- STEP INDICATORS -->
+  <div class="steps" id="stepIndicators"></div>
+
+  <!-- =================== STEP 1: Profile =================== -->
+  <div id="step1" class="step-content">
+    <div class="card">
+      <h2>👤 Your Profile</h2>
+      <p class="sub">Tell us about yourself so we can tailor the analysis to your lifestyle.</p>
+
+      <label>Your major / field</label>
+      <select id="major">
+        <option value="cs">Computer Science / Software Engineering</option>
+        <option value="eng">Engineering (Mechanical, Civil, Electrical…)</option>
+        <option value="med">Pre-Med / Nursing / Health Sciences</option>
+        <option value="biz">Business / Economics / Finance</option>
+        <option value="arts">Arts / Humanities / Social Sciences</option>
+        <option value="other">Other</option>
+      </select>
+
+      <label>Year of study</label>
+      <select id="year">
+        <option value="1">1st Year (Freshman)</option>
+        <option value="2">2nd Year (Sophomore)</option>
+        <option value="3">3rd Year (Junior)</option>
+        <option value="4">4th Year (Senior)</option>
+        <option value="grad">Graduate / Masters / PhD</option>
+      </select>
+
+      <label>Your natural sleep type (chronotype)</label>
+      <select id="chronotype">
+        <option value="early">🐦 Early Bird — feel best waking at 5–7 AM</option>
+        <option value="normal" selected>😐 Neutral — comfortable with 7–9 AM wake-up</option>
+        <option value="night">🦉 Night Owl — naturally awake until midnight or later</option>
+      </select>
+
+      <label>Do you work a part-time job?</label>
+      <select id="hasJob">
+        <option value="no">No</option>
+        <option value="yes">Yes</option>
+      </select>
+
+      <div id="jobHours" class="hidden">
+        <label>Approximate work hours per week</label>
+        <input type="number" id="jobHoursVal" min="1" max="40" value="15" />
+      </div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="nextStep(2)">Next →</button></div>
+  </div>
+
+  <!-- =================== STEP 2: Class Schedule =================== -->
+  <div id="step2" class="step-content hidden">
+    <div class="card">
+      <h2>🏫 Class Schedule</h2>
+      <p class="sub">Add your earliest and latest class times each day. We'll use this to find windows where sleep is possible.</p>
+
+      <label>Days with classes (select all that apply)</label>
+      <div class="toggle-group" id="classDays">
+        <button class="toggle-btn selected" data-day="Mon">Mon</button>
+        <button class="toggle-btn selected" data-day="Tue">Tue</button>
+        <button class="toggle-btn selected" data-day="Wed">Wed</button>
+        <button class="toggle-btn selected" data-day="Thu">Thu</button>
+        <button class="toggle-btn selected" data-day="Fri">Fri</button>
+        <button class="toggle-btn" data-day="Sat">Sat</button>
+        <button class="toggle-btn" data-day="Sun">Sun</button>
+      </div>
+
+      <label style="margin-top:20px">Earliest class start time</label>
+      <input type="time" id="classStart" value="08:00" />
+
+      <label>Latest class end time</label>
+      <input type="time" id="classEnd" value="17:00" />
+
+      <label>Average number of classes per day</label>
+      <input type="range" id="classCount" min="1" max="6" value="3" oninput="document.getElementById('classCountVal').textContent=this.value+' classes'" />
+      <div class="range-val" id="classCountVal">3 classes</div>
+    </div>
+
+    <div class="card">
+      <h2>📚 Study & Homework Load</h2>
+      <p class="sub">How many hours per day do you typically spend studying outside of class?</p>
+
+      <input type="range" id="studyHours" min="0" max="10" value="3" step="0.5"
+        oninput="document.getElementById('studyVal').textContent=this.value+' hrs / day'" />
+      <div class="range-val" id="studyVal">3 hrs / day</div>
+      <div class="range-labels"><span>Light</span><span>Moderate</span><span>Heavy</span></div>
+
+      <label style="margin-top:20px">Do you have late-night study sessions (past midnight)?</label>
+      <div class="toggle-group" id="lateStudy">
+        <button class="toggle-btn" data-val="never">Never</button>
+        <button class="toggle-btn selected" data-val="sometimes">Sometimes</button>
+        <button class="toggle-btn" data-val="often">Often</button>
+        <button class="toggle-btn" data-val="always">Almost every night</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="nextStep(1)">← Back</button>
+      <button class="btn btn-primary" onclick="nextStep(3)">Next →</button>
+    </div>
+  </div>
+
+  <!-- =================== STEP 3: Current Sleep Habits =================== -->
+  <div id="step3" class="step-content hidden">
+    <div class="card">
+      <h2>😴 Current Sleep Habits</h2>
+      <p class="sub">Be honest — this is for your analysis only. We need the real picture to give useful advice.</p>
+
+      <div class="grid-2">
+        <div>
+          <label>What time do you usually go to bed?</label>
+          <input type="time" id="bedtime" value="23:30" />
+        </div>
+        <div>
+          <label>What time do you usually wake up?</label>
+          <input type="time" id="wakeup" value="07:00" />
+        </div>
+      </div>
+
+      <label style="margin-top:20px">How consistent is your sleep schedule?</label>
+      <div class="toggle-group" id="consistency">
+        <button class="toggle-btn" data-val="very">Very consistent (±30 min)</button>
+        <button class="toggle-btn selected" data-val="moderate">Moderate (±1–2 hrs)</button>
+        <button class="toggle-btn" data-val="irregular">Irregular (varies wildly)</button>
+      </div>
+
+      <label style="margin-top:20px">How do you feel when you wake up most mornings?</label>
+      <div class="toggle-group" id="wakeFeeling">
+        <button class="toggle-btn" data-val="great">😊 Refreshed</button>
+        <button class="toggle-btn selected" data-val="ok">😐 OK, takes a while</button>
+        <button class="toggle-btn" data-val="groggy">😴 Very groggy</button>
+        <button class="toggle-btn" data-val="terrible">😩 Exhausted</button>
+      </div>
+
+      <label style="margin-top:20px">Do you use screens (phone, laptop) within 30 minutes of sleeping?</label>
+      <div class="toggle-group" id="screens">
+        <button class="toggle-btn" data-val="never">Never</button>
+        <button class="toggle-btn" data-val="sometimes">Sometimes</button>
+        <button class="toggle-btn selected" data-val="usually">Usually</button>
+        <button class="toggle-btn" data-val="always">Always</button>
+      </div>
+
+      <label style="margin-top:20px">Caffeine habits</label>
+      <select id="caffeine">
+        <option value="none">No caffeine</option>
+        <option value="morning">Morning only (before noon)</option>
+        <option value="afternoon" selected>Afternoon (after 2 PM sometimes)</option>
+        <option value="evening">Evening / late night</option>
+      </select>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="nextStep(2)">← Back</button>
+      <button class="btn btn-primary" onclick="nextStep(4)">Next →</button>
+    </div>
+  </div>
+
+  <!-- =================== STEP 4: Goals & Constraints =================== -->
+  <div id="step4" class="step-content hidden">
+    <div class="card">
+      <h2>🎯 Goals & Constraints</h2>
+      <p class="sub">What matters most to you right now?</p>
+
+      <label>How many hours of sleep do you want to get?</label>
+      <input type="range" id="sleepGoal" min="5" max="10" value="7" step="0.5"
+        oninput="document.getElementById('sleepGoalVal').textContent=this.value+' hours'" />
+      <div class="range-val" id="sleepGoalVal">7 hours</div>
+      <div class="range-labels"><span>5 h</span><span>7.5 h</span><span>10 h</span></div>
+
+      <label style="margin-top:20px">Top priorities (select up to 2)</label>
+      <div class="toggle-group" id="priorities">
+        <button class="toggle-btn selected" data-val="grades">📈 Better grades</button>
+        <button class="toggle-btn" data-val="energy">⚡ More energy</button>
+        <button class="toggle-btn selected" data-val="focus">🧠 Mental focus</button>
+        <button class="toggle-btn" data-val="social">👥 Social life</button>
+        <button class="toggle-btn" data-val="health">❤️ Physical health</button>
+        <button class="toggle-btn" data-val="stress">🧘 Less stress</button>
+      </div>
+
+      <label style="margin-top:20px">Do you have a hard constraint on wake-up time?</label>
+      <select id="hardWakeup">
+        <option value="no">No — I'm flexible</option>
+        <option value="yes">Yes — I must wake up at a fixed time</option>
+      </select>
+
+      <div id="hardWakeupTime" class="hidden">
+        <label>Fixed wake-up time</label>
+        <input type="time" id="hardWakeupVal" value="07:00" />
+      </div>
+
+      <label style="margin-top:20px">Do you take naps?</label>
+      <div class="toggle-group" id="naps">
+        <button class="toggle-btn" data-val="no">No naps</button>
+        <button class="toggle-btn selected" data-val="sometimes">Sometimes (20–30 min)</button>
+        <button class="toggle-btn" data-val="long">Long naps (1+ hr)</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="nextStep(3)">← Back</button>
+      <button class="btn btn-primary" onclick="analyze()">🔍 Analyze My Schedule</button>
+    </div>
+  </div>
+
+  <!-- =================== RESULTS =================== -->
+  <div id="results">
+
+    <div class="result-hero">
+      <h2>Your Personalized Sleep Plan</h2>
+      <div class="big" id="res_sleepWindow">—</div>
+      <small id="res_heroSub">Recommended sleep window</small>
+    </div>
+
+    <div class="metric-grid" id="metricGrid"></div>
+
+    <div id="alertBox"></div>
+
+    <!-- Timeline -->
+    <div class="timeline-wrap">
+      <h3>📊 Your 24-Hour Day Timeline</h3>
+      <div class="timeline" id="timeline"></div>
+      <div class="tl-labels">
+        <span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>12 AM</span>
+      </div>
+      <div class="tl-legend" id="tlLegend"></div>
+    </div>
+
+    <!-- Sleep cycles -->
+    <div class="card">
+      <h2>🔄 Optimal Bed & Wake Times (Sleep Cycles)</h2>
+      <p class="sub">Each sleep cycle is ~90 minutes. Waking at the end of a cycle means you wake during light sleep — feeling more refreshed.</p>
+      <table class="cycle-table" id="cycleTable"></table>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="card">
+      <h2>💡 Personalized Recommendations</h2>
+      <ul class="rec-list" id="recList"></ul>
+    </div>
+
+    <!-- Score -->
+    <div class="card" style="text-align:center">
+      <h2 style="margin-bottom:16px">🏆 Your Sleep Health Score</h2>
+      <div class="score-ring" id="scoreRing">
+        <svg width="90" height="90" viewBox="0 0 90 90">
+          <circle cx="45" cy="45" r="38" fill="none" stroke="#2d2d4e" stroke-width="8"/>
+          <circle cx="45" cy="45" r="38" fill="none" stroke-width="8"
+            stroke-dasharray="239" stroke-dashoffset="239"
+            stroke-linecap="round" id="scoreArc"
+            style="transition: stroke-dashoffset 1s ease, stroke 1s"/>
+        </svg>
+        <div class="score-num" id="scoreNum">–</div>
+      </div>
+      <p id="scoreLabel" style="color:var(--muted);font-size:.9rem"></p>
+    </div>
+
+    <button class="btn btn-outline restart-btn" onclick="restart()">↩ Start Over</button>
+  </div>
+
+</div>
+
+<script>
+// ===== STATE =====
+let currentStep = 1;
+const TOTAL_STEPS = 4;
+
+// ===== STEP NAVIGATION =====
+function buildStepIndicators() {
+  const c = document.getElementById('stepIndicators');
+  c.innerHTML = '';
+  for (let i = 1; i <= TOTAL_STEPS; i++) {
+    const d = document.createElement('div');
+    d.className = 'step-dot' + (i < currentStep ? ' done' : i === currentStep ? ' active' : '');
+    d.textContent = i < currentStep ? '✓' : i;
+    c.appendChild(d);
+    if (i < TOTAL_STEPS) {
+      const l = document.createElement('div');
+      l.className = 'step-line' + (i < currentStep ? ' done' : '');
+      c.appendChild(l);
+    }
+  }
+}
+
+function nextStep(n) {
+  document.getElementById('step' + currentStep).classList.add('hidden');
+  currentStep = n;
+  const el = document.getElementById('step' + n);
+  if (el) { el.classList.remove('hidden'); }
+  buildStepIndicators();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ===== TOGGLE BUTTONS =====
+document.querySelectorAll('.toggle-group').forEach(group => {
+  group.addEventListener('click', e => {
+    const btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+    const multi = group.id === 'priorities';
+    if (multi) {
+      const sel = group.querySelectorAll('.selected');
+      if (btn.classList.contains('selected')) {
+        btn.classList.remove('selected');
+      } else {
+        if (sel.length < 2) btn.classList.add('selected');
+      }
+    } else {
+      group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    }
+  });
+});
+
+document.getElementById('hasJob').addEventListener('change', function() {
+  document.getElementById('jobHours').classList.toggle('hidden', this.value !== 'yes');
+});
+document.getElementById('hardWakeup').addEventListener('change', function() {
+  document.getElementById('hardWakeupTime').classList.toggle('hidden', this.value !== 'yes');
+});
+
+// ===== HELPERS =====
+function getSelected(groupId) {
+  const btns = document.querySelectorAll(`#${groupId} .toggle-btn.selected`);
+  return [...btns].map(b => b.dataset.val || b.dataset.day);
+}
+
+function timeToMinutes(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function minutesToTime(mins) {
+  const m = ((mins % 1440) + 1440) % 1440;
+  const h = Math.floor(m / 60) % 24;
+  const min = m % 60;
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${hour12}:${String(min).padStart(2, '0')} ${ampm}`;
+}
+
+function minutesToPct(mins) {
+  return ((((mins % 1440) + 1440) % 1440) / 1440) * 100;
+}
+
+// ===== ANALYSIS =====
+function analyze() {
+  // Collect inputs
+  const chronotype = document.getElementById('chronotype').value;
+  const hasJob = document.getElementById('hasJob').value;
+  const jobHrs = hasJob === 'yes' ? parseFloat(document.getElementById('jobHoursVal').value) : 0;
+  const classStart = timeToMinutes(document.getElementById('classStart').value);
+  const classEnd   = timeToMinutes(document.getElementById('classEnd').value);
+  const studyHours = parseFloat(document.getElementById('studyHours').value);
+  const lateStudy  = getSelected('lateStudy')[0] || 'sometimes';
+  const bedtime    = timeToMinutes(document.getElementById('bedtime').value);
+  const wakeup     = timeToMinutes(document.getElementById('wakeup').value);
+  const consistency = getSelected('consistency')[0] || 'moderate';
+  const wakeFeeling = getSelected('wakeFeeling')[0] || 'ok';
+  const screens    = getSelected('screens')[0] || 'usually';
+  const caffeine   = document.getElementById('caffeine').value;
+  const sleepGoal  = parseFloat(document.getElementById('sleepGoal').value);
+  const priorities = getSelected('priorities');
+  const hardWakeup = document.getElementById('hardWakeup').value;
+  const hardWakeupMin = hardWakeup === 'yes' ? timeToMinutes(document.getElementById('hardWakeupVal').value) : null;
+  const napPref    = getSelected('naps')[0] || 'sometimes';
+
+  // Compute actual current sleep
+  let currentSleep = (wakeup - bedtime + 1440) % 1440 / 60;
+  if (currentSleep > 16) currentSleep = 24 - currentSleep + 8; // sanity guard
+
+  // Recommended total sleep
+  const rec = sleepGoal;
+
+  // Determine target wake time
+  let targetWake;
+  if (hardWakeupMin !== null) {
+    targetWake = hardWakeupMin;
+  } else {
+    // Push earlier if early bird, later if night owl
+    if (chronotype === 'early') targetWake = classStart - 90; // 90 min buffer
+    else if (chronotype === 'night') targetWake = classStart - 60;
+    else targetWake = classStart - 75;
+  }
+  // Ensure wake is before class
+  if (targetWake > classStart) targetWake = classStart - 60;
+  // clamp wake to reasonable range 4:00–10:00
+  targetWake = Math.max(240, Math.min(targetWake, 600));
+
+  // Calculate bedtime from target wake + goal
+  const targetBed = ((targetWake - rec * 60) + 1440) % 1440;
+
+  // Sleep latency adjustment (screens, caffeine add time to fall asleep)
+  let latency = 15; // minutes
+  if (screens === 'usually' || screens === 'always') latency += 15;
+  if (caffeine === 'evening') latency += 20;
+  else if (caffeine === 'afternoon') latency += 8;
+  const adjustedBed = ((targetBed - latency) + 1440) % 1440;
+
+  // Compute cycles
+  const cycles = [];
+  for (let c = 4; c <= 6; c++) {
+    const duration = c * 90; // minutes
+    const wb = ((targetWake - duration) + 1440) % 1440;
+    cycles.push({ cycles: c, duration: duration / 60, bedtime: wb, wake: targetWake });
+  }
+
+  // Score calculation
+  let score = 70;
+  if (currentSleep >= 7 && currentSleep <= 9) score += 10;
+  else if (currentSleep < 6 || currentSleep > 10) score -= 15;
+  if (consistency === 'very') score += 10;
+  else if (consistency === 'irregular') score -= 10;
+  if (wakeFeeling === 'great') score += 8;
+  else if (wakeFeeling === 'terrible') score -= 12;
+  if (screens === 'never') score += 5;
+  else if (screens === 'always') score -= 8;
+  if (caffeine === 'evening') score -= 8;
+  if (caffeine === 'none') score += 5;
+  if (lateStudy === 'always') score -= 10;
+  if (lateStudy === 'never') score += 5;
+  score = Math.max(10, Math.min(100, Math.round(score)));
+
+  // Sleep debt
+  const weeklyDebt = Math.max(0, (rec - currentSleep) * 5);
+
+  // Build recommendations
+  const recs = [];
+
+  recs.push({
+    icon: '🕙',
+    text: `<strong>Target bedtime: ${minutesToTime(adjustedBed)}</strong> — set this as your phone alarm. Going to bed ${latency} min before you expect to sleep (falling-asleep latency) means lights-out at ${minutesToTime(adjustedBed)}, actual sleep around ${minutesToTime(targetBed)}.`
+  });
+
+  recs.push({
+    icon: '⏰',
+    text: `<strong>Wake up at ${minutesToTime(targetWake)}</strong> — this gives you ~${((targetWake - classStart + 1440) % 1440 / 60).toFixed(1)} hrs before your first class to eat, commute, and warm up your brain.`
+  });
+
+  if (screens === 'usually' || screens === 'always') {
+    recs.push({ icon: '📵', text: '<strong>Stop screens 30–45 min before bed.</strong> Blue light suppresses melatonin by up to 50%. Switch to a book, stretching, or low-light journaling.' });
+  }
+
+  if (caffeine === 'evening' || caffeine === 'afternoon') {
+    recs.push({ icon: '☕', text: '<strong>Cut caffeine by 2 PM.</strong> Caffeine has a 5–6 hour half-life — a 4 PM coffee still has half its dose in your blood at 10 PM, delaying sleep onset significantly.' });
+  }
+
+  if (lateStudy === 'often' || lateStudy === 'always') {
+    recs.push({ icon: '📚', text: '<strong>Move deep study to late afternoon (4–7 PM)</strong> rather than late night. Cognitive performance peaks ~2–4 hours after waking. Late-night studying returns diminishing results and delays your sleep phase.' });
+  }
+
+  if (consistency === 'irregular') {
+    recs.push({ icon: '📅', text: '<strong>Pick ONE consistent wake time and keep it even on weekends.</strong> Irregular schedules cause "social jet lag" — your body never gets into a rhythm, worsening sleep quality even if hours are sufficient.' });
+  }
+
+  if (napPref === 'long') {
+    recs.push({ icon: '💤', text: '<strong>Replace long naps (1+ hr) with 20-minute power naps.</strong> Long naps push you into deep sleep, causing grogginess and delaying your nighttime sleep onset by 1–2 hours.' });
+  } else if (napPref === 'sometimes') {
+    recs.push({ icon: '💤', text: '<strong>20-minute nap after lunch (1–2 PM) is optimal.</strong> Set a 25-min alarm (5 min to fall asleep). This restores alertness without entering deep sleep cycles.' });
+  }
+
+  if (weeklyDebt > 3) {
+    recs.push({ icon: '📊', text: `<strong>You have a weekly sleep debt of ~${weeklyDebt.toFixed(1)} hours.</strong> Don't try to recover it all on weekends — that just worsens irregularity. Instead, go to bed 30 min earlier than your target each night until the debt is paid off.` });
+  }
+
+  if (hasJob === 'yes' && jobHrs > 20) {
+    recs.push({ icon: '⚠️', text: `<strong>Working ${jobHrs} hrs/week is aggressive alongside full-time studies.</strong> Research shows >20 hrs/week negatively impacts GPA. Consider protecting at least 3 weeknights as study-only nights.` });
+  }
+
+  recs.push({ icon: '🌡️', text: '<strong>Keep your room at 65–68°F (18–20°C).</strong> Your body needs to drop ~2°F to initiate sleep. A cooler room accelerates this. This is one of the highest-impact, zero-cost sleep quality improvements.' });
+
+  recs.push({ icon: '🧠', text: `<strong>The 90-min cycle rule:</strong> if you can't hit ${minutesToTime(cycles[2].bedtime)} (6 cycles), aim for ${minutesToTime(cycles[1].bedtime)} (5 cycles) instead. Waking mid-cycle feels worse than waking after ${(cycles[1].duration).toFixed(1)} hrs vs. ${(cycles[2].duration).toFixed(1)} hrs.` });
+
+  // Render everything
+  document.querySelectorAll('.step-content').forEach(s => s.classList.add('hidden'));
+  document.getElementById('stepIndicators').classList.add('hidden');
+  document.getElementById('results').style.display = 'block';
+
+  document.getElementById('res_sleepWindow').textContent =
+    `${minutesToTime(adjustedBed)} → ${minutesToTime(targetWake)}`;
+  document.getElementById('res_heroSub').textContent =
+    `${rec} hours of sleep · ${latency} min fall-asleep buffer included`;
+
+  // Metrics
+  const metrics = [
+    { icon: '🛏️', val: minutesToTime(adjustedBed), label: 'Lights Out', cls: 'teal' },
+    { icon: '⏰', val: minutesToTime(targetWake), label: 'Wake Up', cls: 'teal' },
+    { icon: '⏳', val: rec + ' hrs', label: 'Sleep Goal', cls: currentSleep >= rec - 0.5 ? 'green' : 'yellow' },
+    { icon: '📉', val: currentSleep.toFixed(1) + ' hrs', label: 'Current Sleep', cls: currentSleep >= 7 ? 'green' : currentSleep >= 6 ? 'yellow' : 'red' },
+    { icon: '💸', val: weeklyDebt.toFixed(1) + ' hrs', label: 'Weekly Debt', cls: weeklyDebt <= 1 ? 'green' : weeklyDebt <= 4 ? 'yellow' : 'red' },
+    { icon: '📚', val: studyHours + ' hrs', label: 'Study / Day', cls: 'teal' },
+  ];
+  const mg = document.getElementById('metricGrid');
+  mg.innerHTML = metrics.map(m => `
+    <div class="metric-card ${m.cls}">
+      <div class="icon">${m.icon}</div>
+      <div class="val">${m.val}</div>
+      <div class="label">${m.label}</div>
+    </div>
+  `).join('');
+
+  // Alerts
+  const ab = document.getElementById('alertBox');
+  ab.innerHTML = '';
+  if (currentSleep < 6) {
+    ab.innerHTML += `<div class="alert alert-bad">⚠️ <div>You're currently averaging only <strong>${currentSleep.toFixed(1)} hours</strong> of sleep — well below the 7–9 hour minimum for cognitive function. Studies show that 17 hours of wakefulness impairs performance equivalent to a 0.05% blood-alcohol level.</div></div>`;
+  } else if (currentSleep >= 7) {
+    ab.innerHTML += `<div class="alert alert-ok">✅ <div>Your current sleep of <strong>${currentSleep.toFixed(1)} hours</strong> is in a healthy range! Focus on <em>consistency</em> and <em>quality</em> rather than quantity.</div></div>`;
+  }
+  if (lateStudy === 'always') {
+    ab.innerHTML += `<div class="alert alert-warn">⚠️ <div><strong>Chronic late-night studying</strong> creates a feedback loop: you stay up late → poor sleep → worse focus next day → need more time to study → stay up even later. Breaking this cycle is priority #1.</div></div>`;
+  }
+
+  // Timeline
+  renderTimeline(adjustedBed, targetWake, classStart, classEnd, studyHours);
+
+  // Cycle table
+  const ct = document.getElementById('cycleTable');
+  ct.innerHTML = `<thead><tr><th>Cycles</th><th>Duration</th><th>Bedtime</th><th>Wake</th><th>Quality</th></tr></thead>
+  <tbody>${cycles.map(c => {
+    const isRec = c.cycles === 5;
+    const q = c.cycles === 6 ? ['Ideal', 'badge-green'] : c.cycles === 5 ? ['Good', 'badge-green'] : ['Minimum', 'badge-yellow'];
+    return `<tr style="${isRec ? 'background:rgba(124,58,237,.1)' : ''}">
+      <td>${c.cycles} ${isRec ? '⭐' : ''}</td>
+      <td>${c.duration} hrs</td>
+      <td><strong>${minutesToTime(c.bedtime)}</strong></td>
+      <td>${minutesToTime(c.wake)}</td>
+      <td><span class="badge ${q[1]}">${q[0]}</span></td>
+    </tr>`;
+  }).join('')}</tbody>`;
+
+  // Recommendations
+  const rl = document.getElementById('recList');
+  rl.innerHTML = recs.map(r => `<li><span class="rec-icon">${r.icon}</span><span>${r.text}</span></li>`).join('');
+
+  // Score ring
+  const arc = document.getElementById('scoreArc');
+  const circumference = 2 * Math.PI * 38;
+  const offset = circumference - (score / 100) * circumference;
+  const color = score >= 75 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
+  document.getElementById('scoreNum').textContent = score;
+  document.getElementById('scoreNum').style.color = color;
+  arc.style.stroke = color;
+  setTimeout(() => { arc.style.strokeDashoffset = offset; }, 100);
+  const labels = score >= 80 ? 'Excellent sleep habits! Keep it up.' : score >= 60 ? 'Good foundation — a few tweaks will make a big difference.' : score >= 40 ? 'Room for improvement — follow the plan above.' : 'Sleep is a critical bottleneck for your performance right now.';
+  document.getElementById('scoreLabel').textContent = labels;
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderTimeline(bed, wake, classStart, classEnd, studyHours) {
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+
+  const segments = [];
+
+  // Sleep
+  if (bed > wake) {
+    segments.push({ start: bed, end: 1440, color: '#7c3aed', label: '😴 Sleep', opacity: .85 });
+    segments.push({ start: 0,   end: wake, color: '#7c3aed', label: '',         opacity: .85 });
+  } else {
+    segments.push({ start: bed, end: wake, color: '#7c3aed', label: '😴 Sleep', opacity: .85 });
+  }
+
+  // Morning routine
+  segments.push({ start: wake, end: wake + 60, color: '#06b6d4', label: '🌅 Morning', opacity: .7 });
+
+  // Class
+  segments.push({ start: classStart, end: classEnd, color: '#3b82f6', label: '🎓 Classes', opacity: .8 });
+
+  // Study (after classes)
+  const studyStart = classEnd + 30;
+  const studyEnd   = studyStart + studyHours * 60;
+  segments.push({ start: studyStart % 1440, end: studyEnd % 1440, color: '#f59e0b', label: '📚 Study', opacity: .75 });
+
+  // Free time fills gaps
+  const freeColor = '#10b981';
+
+  segments.forEach(seg => {
+    const startPct = (seg.start / 1440) * 100;
+    let endPct   = (seg.end   / 1440) * 100;
+    if (seg.end < seg.start) endPct = 100; // wrap handled by two segments
+    const width = endPct - startPct;
+    if (width <= 0) return;
+    const div = document.createElement('div');
+    div.className = 'tl-segment';
+    div.style.left  = startPct + '%';
+    div.style.width = width + '%';
+    div.style.background = seg.color;
+    div.style.opacity = seg.opacity;
+    div.style.color = '#fff';
+    div.textContent = width > 8 ? seg.label : '';
+    tl.appendChild(div);
+  });
+
+  // Legend
+  const legend = [
+    { color: '#7c3aed', label: 'Sleep' },
+    { color: '#06b6d4', label: 'Morning Routine' },
+    { color: '#3b82f6', label: 'Classes' },
+    { color: '#f59e0b', label: 'Study' },
+    { color: '#10b981', label: 'Free Time' },
+  ];
+  document.getElementById('tlLegend').innerHTML = legend.map(l =>
+    `<div class="tl-legend-item"><div class="tl-legend-dot" style="background:${l.color}"></div>${l.label}</div>`
+  ).join('');
+}
+
+function restart() {
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('stepIndicators').classList.remove('hidden');
+  currentStep = 1;
+  buildStepIndicators();
+  document.querySelectorAll('.step-content').forEach((s, i) => {
+    s.classList.toggle('hidden', i !== 0);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Init
+buildStepIndicators();
+</script>
+</body>
+</html>
