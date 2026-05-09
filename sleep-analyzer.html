@@ -1601,9 +1601,9 @@ function analyze() {
     if (n >= target) clearInterval(timer);
   }, 20);
   const labels = score >= 80 ? '✨ Excellent sleep habits! Keep it up.' :
-                 score >= 60 ? '🌙 Good foundation — a few tweaks will make a big difference.' :
-                 score >= 40 ? '🌱 Room to grow — follow the plan above.' :
-                               '⚠️ Sleep is a critical bottleneck right now. Let\'s fix that.';
+                 score >= 60 ? '🌙 Good foundation — small tweaks in the plan below will make a big difference.' :
+                 score >= 40 ? '🌱 Room to grow — follow the personalized plan below.' :
+                               '⚠️ Sleep is a critical bottleneck right now — your plan below will help fix it.';
   document.getElementById('scoreLabel').textContent = labels;
 }
 
